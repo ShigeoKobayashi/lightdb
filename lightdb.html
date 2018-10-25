@@ -1,0 +1,827 @@
+﻿<!DOCTYPE html "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang=en>
+
+<head>
+<title>LightDB: B-tree based simple and fast database API library</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="keywords" content="LightDB;B-tree based;database API; c/c++ library">
+<meta name="description" content="B-tree based simple database API library">
+<style type=text/css>
+body {color: #3f0f0f; background: #efefef; margin-left: 4em; margin-right: 4em;}
+h1 {color: #f0f0f0; background-color: #30A0FF; border-color: #FF00FF; width: 100%;
+    border-style: solid; border-top-width: 0.1em; border-bottom-width: 0.1em; border-right: none;
+    border-left: none;   padding: 0.1em; font-weight: bold; font-size: 160%;text-align: center;
+}
+h2 {color: #00007f; background-color: #e7e7ff; border-color: #949494;
+    width: 100%; border-style: solid;
+    border-left: 0.6em solid #30A0FF;
+    border-right: none; border-top-width: 0.1em;
+    border-bottom-width: 0.1em;  padding: 0.1em;  font-weight: bold;  font-size: 110%;
+}
+h3 {color: #00007f; padding: 0.2em; font-size: 110%;
+    border-style: solid;
+    border-left: none; border-right: none; border-top-width: 0.05em;
+    border-bottom-width: 0.05em; 
+}
+h4, h5 { color: #000000; padding: 0.2em; font-size: 100%;}
+table { 
+    margin-top: 1em; margin-bottom: 1em; margin-left: 2em; margin-right: 1em;
+    background-color: #000000;
+    border-spacing: 1px;
+}
+th {background: #e7e7ff;}
+td {background: #f3f7ff;}
+dt {margin-top: 0.2em;}
+caption { color: #7f0000;font-weight: bold;}
+pre { margin-top: 1px;}
+code { margin-top: 1px; color: #0000ff;}
+kbd { color: #ffffbf;font-weight: bold;}
+## blockquote { MARGIN: 1px 1px 1px 1px;}
+</style>
+</head>
+
+<body>
+<h1>LightDB: B-tree based simple and fast database C/C++ API library</h1>
+<div align="right">
+This software can be redistributed under <a href="https://www.gnu.org/licenses/lgpl-3.0.en.html" target="_new">GNU Lesser General Public License</a>.<br/>
+Copylight (c) 2018 Shigeo Kobayashi. All rights reserved.
+</div>
+<hr/>
+
+The LightDB is a simple and farst database C/C++ API library based on the B-Tree(not B<sup>+</sup>-Tree) indexing.<br/>
+The B-Tree is a self-balancing search tree having multiple nodes that contain multiple records.<br/>
+All records in B-Tree are stored in sorted order. <br/>
+For more informations about B-Tree,refer to any other appropriate documentations.<p/>
+LightDB file can be more than 2GB in size on both 32-bit and 64-bit operating systems.<br/>
+This software has been tested on Windows-10(32-bit&amp;64-bit) and Linux(32-bit CentOS-5 &amp; 64-bit CentOS-7).
+
+<h2>Overview: Record(=Key+Data)</h2>
+To construct LightDB database file,records must be added to the file.<br/>
+A record <u>consists of key and data </u>fields.<p/>
+<b>Record</b>:<table><tr><td> Key field </td><td> Data field </td></tr></table>
+The key field is used for sorting and searching. <br/>
+Every key in the database must be unique. Any record having the same key in the database can not be added.<br/>
+The data field is for the user,and never used by LightDB in search mechanithm. <br/>
+Array length and <a href="#LDB_TYPE">types of key and data</a> are defined by the user.<p/>
+To keep B-Tree be balanced,restructuring of the tree is sometimes performed after record <u>addition or deletion</u> that is somewhat time-consuming. For this reason,data-length should be as short as possible.<br/>
+It is sometimes good idea to store the data iteself to other place if it is substantially long,and set it's location to the data field instead of the real data itself with corresponding key,and add them to LightDB database.<p/>
+
+<h3>Contents:</h3>
+<table>
+<tr><th>I/O functions</th><th>Low level I/O functions</th><th>Information functions</th><th>Others</th>
+<tr>
+<td>
+ <a href="#LdbOpen">LdbOpen()</a><br/>
+ <a href="#LdbClose">LdbClose()</a><br/>
+ <a href="#LdbAddRecord">LdbAddRecord()</a><br/>
+ <a href="#LdbGetData">LdbGetData()</a><br/>
+ <a href="#LdbChangeData">LdbChangeData()</a><br/>
+ <a href="#LdbWriteRecord">LdbWriteRecord()</a><br/>
+ <a href="#LdbDeleteRecord">LdbDeleteRecord()</a><br/>
+ <a href="#LdbGetMinRecord">LdbGetMinRecord()</a><br/>
+ <a href="#LdbGetMaxRecord">LdbGetMaxRecord()</a><br/>
+ <a href="#LdbGetNextRecord">LdbGetNextRecord()</a><br/>
+ <a href="#LdbGetNextMinRecord">LdbGetNextMinRecord()</a><br/>
+ <a href="#LdbGetPrevRecord">LdbGetPrevRecord()</a><br/>
+ <a href="#LdbGetPrevMaxRecord">LdbGetPrevMaxRecord()</a><br/>
+ <a href="#LdbGetCurRecord">LdbGetCurRecord()</a><br/>
+ <a href="#LdbChangeCurData">LdbChangeCurData()</a><br/>
+ <a href="#LdbFlush">LdbFlush()</a><br/>
+ <a href="#LdbUserAreaIO">LdbUserAreaIO()</a>
+</td><td>
+ <a href="#RECORD_POINTER">About Record pointer</a><br/>
+ <a href="#LOW_LEVEL_IO">About Low level I/O functions</a><br/><br/><br/>
+ <a href="#LdbGetRootPage">LdbGetRootPage()</a><br/>
+ <a href="#LdbGetCurrentPTR">LdbGetCurrentPTR()</a><br/>
+ <a href="#LdbGetRecord">LdbGetRecord()</a><br/>
+ <a href="#LdgGetRecordCount">LdgGetRecordCount()</a><br/>
+ <a href="#LdbGetRightPage">LdbGetRightPage()</a><br/>
+ <a href="#LdbSetData">LdbSetData()</a>
+</td><td>
+ <a href="#LdbVerifyContents"/>LdbVerifyContents()</a><br/>
+ <a href="#LdbGetInfo">LdbGetInfo()</a><br/>
+ <a href="#LdbCompareKeys">LdbCompareKeys()</a><br/>
+ <a href="#LdbGetMsg">LdbGetMsg()</a><br/>
+</td><td>
+ <a href="#OpenMode">Open mode characters</a><br/>
+ <a href="#ERROR_CODE">Error/Warning codes</a><br/>
+ <a href="#LDB_HANDLE">LDB_HANDLE</a><br/>
+ <a href="#LDB_TYPE">LDB_TYPE</a><br/>
+ <a href="#KeyCompare">Built in key-compare logic</a><br/>
+ <a href="#DB_STRUCTURE">LightDB database file structure</a>
+</td></tr>
+</table>
+
+<a name="API"/>
+<h2>API Reference</h2>
+All LightDB API functions return <a href="#ERROR_CODE">integer result code</a>.<br/>
+
+<a name="LdbOpen"/>
+<h3>LdbOpen()</h3>
+<pre><code>
+int LdbOpen(                              // opens database file
+	<a href="#LDB_HANDLE">LDB_HANDLE</a>        *ph,            // pointer to the handle necessary for all I/O operations done from now on
+	const char        *szPath,        // database file path to be opened
+	char               chMode,        // <a href="#OpenMode">open mode</a>
+        <a href="#LDB_TYPE">LDB_TYPE</a>           keyType,       // key type
+	int                keyArraySize,  // key array size
+	<a href="#KeyCompare">KEY_COMP_FUNCTION</a> *pKeyCompFunc,  // function pointer for user defined key-compare function
+	<a href="#LDB_TYPE">LDB_TYPE</a>           dataType,      // data type
+	int                dataArraySize, // data array size
+	int                nItem,         // maximum number of items in a page(can be zero)
+	int                nCache         // maximum number of pages kept in computer memories(can be zero)
+)
+</code></pre>
+
+<a name="OpenMode">
+<br><b>Notes:</b>
+<pre>
+  <u>chMode</u> is an <b>open mode character</b>,and must be one of the following characters.
+    'R' ... opens existing file for read only mode.
+    'W' ... opens exisitng file for read and write mode.
+    'N' ... opens/creates non-existing file for read and write mode.
+	    If the file is there,then the open fails. 
+    'T' ... opens non-existing or existing file for read and write mode.
+            existing file is truncated.
+    r,w,n,t ... Lower case character is accepted.
+  <u>nItem</u> is a maximum number of items(keys) can be kept in a page.It must be even and be greater or equal to 8,otherwise it is computed by LightDB.
+  <u>nCache</u> is a maximum number of pages cached in memory.
+            nCache or nItem can be zero,in that case,LightDB will decide proper value.
+  <u>pKeyCompFunc</u> is an address of the key compare function provided by the user.
+            This is ignored if keyType!=T_UNDEFINED which means to use <a href="#KeyCompare">built-in key compare logic of LightDB</a>.
+            To use user own key compare function,set keyType==T_UNDEFINED and pKeyCompFunc must be provided.
+            When keyType==T_UNDEFINED, then keyArraySize must be in bytes.
+  Note:
+    Key and Data are arrays of keyType and dataType respectively.
+    keyArraySize and dataArraySize are array (not byte) sizes of Key and Data respectively.
+    keyType,keySize,dataType,dataByteSize,and nItem are ignored when existing file is opened.
+    (values in the file are used instead).
+
+</pre>
+<hr/>
+<a name="LDB_HANDLE"/>
+<b>LDB_HANDLE is the structure used in every LightDB API functions</b> at the first argument defined as follows.
+<pre><code>
+typedef struct _LDB_HANDLE
+{
+    U_INT64  LdbID;     /* After successful open,the content will be set to "LightDB"   */
+    U_INT64  LdbObject; /* After successful open,C++ LightDB main class pointer is set. */
+    int      LdbStatus; /* LDB API return value.                                        */
+    int      c_errno;   /* C/C++ API error code if provided.                            */
+} LDB_HANDLE;
+</code></pre>
+<hr/><p/>
+
+<b>For readability,some integer types are defined as follows</b>.
+<pre><code>/* 64 bit integer mainly used for BLOCK number or handles used in LightDB. */
+#define S_INT16           short
+#define U_INT16  unsigned short
+#define S_INT32           int
+#define U_INT32  unsigned int
+#define S_INT64           long long int
+#define U_INT64  unsigned long long int
+</code></pre>
+<p/>
+<hr/><p/>
+<a name="LDB_TYPE"/>
+<b>To inform key and data types to LightDB,use following types</b>
+<pre><code>typedef enum 
+{
+        T_UBYTE8   =  1, /*  1  ... Unsigned char   ( 8-bit)         */
+        T_SBYTE8   =  2, /*  2  ... Signed char     ( 8-bit)         */
+        T_USHORT16 =  3, /*  3  ... Unsigned short  (16-bit)         */
+        T_SSHORT16 =  4, /*  4  ... Signed short    (16-bit)         */
+        T_UINT32   =  5, /*  5  ... Unsigned int    (32-bit)         */
+        T_SINT32   =  6, /*  6  ... Signed int      (32-bit)         */
+        T_UINT64   =  7, /*  7  ... Unsigned int    (64-bit)         */
+        T_SINT64   =  8, /*  8  ... Signed int      (64-bit)         */
+        T_FLOAT32  =  9, /*  9  ... Float           (32-bit)         */
+        T_DOUBLE64 = 10, /* 10  ... Double          (64-bit)         */
+        T_UNDEFINED= 11, /* 11  ... Undefined.
+                                    The user must provide key compare function
+                                    if this is specified for key type,
+                                    the size of T_UNDEFINED key/data must be specified in bytes.
+                         */
+} LDB_TYPE;
+</code></pre>
+
+
+<a name="KeyCompare"/>
+All records(keys) are stored in the LightDB database in sorted order according to the key compare logic.<br/> 
+<b>Built-in key compare logic of LightDB</b> is just like the code bellow
+<pre><code>
+int KeyCompare(void *pk1,void *pk2,int c,LDB_HANDLE *ph) 
+{
+     Key register *p1  = (Key *)pk1;
+     Key register *p2  = (Key *)pk2;
+     for(int register i=0;i&lt;c;++i) {
+         if     (p1[i]&gt;p2[i]) return  1; /* pk1 &gt; pk2 */
+         else if(p1[i]&lt;p2[i]) return -1; /* pk1 &lt; pk2 */
+     }
+     return 0;                           /* pk1 == pk2 */
+}
+</code></pre>
+Key and c is the key type and key array size respectively specified by the user.<br/>
+Pointers to key and data are passed to LightDB API as void*,and they are casted to proper types when they are actually used.<br/>
+The user can provide user specific key compare function.
+<hr/><p/>
+
+To provide <b><u>user specific key compare function</u></b>,use following declaration,create simillar function listed above,and provide it to <a href="#LdbOpen">LdbOpen()</a>.
+<pre><code>
+/* Key compare function called in the B-tree search process. */
+typedef int (KEY_COMP_FUNCTION)(void *pk1,void *pk2,int cb,LDB_HANDLE *ph);
+</code></pre>
+
+LDB_HANDLE *ph is the one specified at LdbOpen(). 
+<hr/>
+<p/>
+If you need some more info in the user defined key-compare function you can wrap LDB_HANDLE and use it like
+<pre><code>
+typedef struct _MY_HANDLE {    // User specific LDB_HANDLE
+    LDB_HANDLE ldb_handle;     // Place the LDB_HANDLE here.
+    ..........                 // Place user specific informations from here.
+} MY_HANDLE;
+      .....
+int MyKeyCompFunc(void *p1,void *p2,int ck,LDB_HANDLE ph)
+{
+      MY_HANDLE *mh = (MY_HANDLE*)ph;
+      .......
+}
+      .......
+MY_HANDLE   mh;
+LDB_HANDLE *ph = (LDB_HANDLE *)&mh;
+nt e = LdbOpen(ph,"db-file path",'W',
+               T_UNDEFINED,keyByteSize,(KEY_COMP_FUNCTION *)MyKeyCompFunc,
+               dataType,dataArraySize,0,0);
+</code></pre>
+
+
+<a name="LdbClose"/>
+<h3>LdbClose()</h3>
+<pre><code>int LdbClose(         // close LightDb file
+      LDB_HANDLE *ph  // pointer to the LDB_HANDLE.
+)
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+ Once opened,LightDB file must be closed.
+ Before closing the file,LightDB flushes all modified caches to the file.
+</pre>
+
+<a name="LdbAddRecord"/>
+<h3>LdbAddRecord()</h3>
+<pre><code>int LdbAddRecord(             // adds new record (pKey+pData) to the database.
+        LDB_HANDLE *ph,       // pointer to the LDB_HANDLE.
+        void *pKey,           // pointer to the key added.
+        void *pData           // pointer to the data added.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Add new record to the data base.
+  If the same key is already in the database,then this function fails.
+  Array size of pKey and pData must be greater than or equal to the size specified at <a href="#LdbOpen">LdbOpen()</a>.
+  (This array size assumption applies to other I/O functions except stated otherwise.)
+  To keep B-Tree be balanced,tree restructuring may happen. 
+</pre>
+
+<a name="LdbGetData"/>
+<h3>LdbGetData()</h3>
+<pre><code>
+int LdbGetData(             // retrieves the data(pData) paired with the specified key(pKey).
+        LDB_HANDLE *ph,     // pointer to the LDB_HANDLE.
+        void *pKey,         // user specified key to obtain corresponding data.
+        void *pData         // pointer to the data area retrieved.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+ Find the record having the key(pKey) and copy it's data to pData.
+</pre>
+
+<a name="LdbChangeData"/>
+<h3>LdbChangeData()</h3>
+<pre><code>int LdbChangeData(        // changes the data field having the key(pKey) to pData.
+        LDB_HANDLE *ph,   // pointer to the LDB_HANDLE.
+        void *pKey,       // pointer to the key searched.
+        void *pData       // pointer to the data changed.
+     );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Find the record having the key(pKey) and change it's data to pData.
+</pre>
+
+
+<a name="LdbWriteRecord"/>
+<h3>LdbWriteRecord()</h3>
+<pre><code>int LdbWriteRecord(     // finds the key and change paired data,or add key and data if not found.
+        LDB_HANDLE *ph, // pointer to the LDB_HANDLE.
+        void *pKey,     // pointer to the key searched.
+        void *pData     // pointer to the data changed or added.
+      );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Find the record having the key(pKey) and change the data to pData.
+  If the key is not found,then the record specified is added to the database.
+</pre>
+
+
+<a name="LdbDeleteRecord"/>
+<h3>LdbDeleteRecord()</h3>
+<pre><code>int LdbDeleteRecord(      // deletes the record having the key specified by pKey.
+       LDB_HANDLE *ph,    // pointer to the LDB_HANDLE.
+       void       *pKey   // pointer to the key to identify the record deleted.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Delete the record having the key(pKey) from the data base.
+  The record pointer is undefined after successful deletion.
+  To keep B-Tree be balanced,tree restructuring may happen. 
+</pre>
+
+<a name="LdbGetMinRecord"/>
+<h3>LdbGetMinRecord()</h3>
+<pre><code>int LdbGetMinRecord(     // retrieves the record having the minimum key.
+       LDB_HANDLE *ph,   // pointer to the LDB_HANDLE.
+       void *pKey,       // the minimum key retrieved.
+       void *pData       // the data paired with the minimum key.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Retrieve minimum key record.
+</pre>
+
+<a name="LdbGetMaxRecord"/>
+<h3>LdbGetMaxRecord()</h3>
+<pre><code>int LdbGetMaxRecord(     // retrieves the record having the maximum key.
+       LDB_HANDLE *ph,   // pointer to the LDB_HANDLE.
+       void *pKey,       // the maximum key retrieved.
+       void *pData       // the data paired with the maximum key.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Retrieve maximum key record.
+</pre>
+
+<a name="LdbGetNextRecord"/>
+<h3>LdbGetNextRecord()</h3>
+<pre><code>int LdbGetNextRecord(     // returns the next record from the current record pointer in sorted order.
+       LDB_HANDLE *ph,    // pointer to the LDB_HANDLE.
+       void *pKey,        // the next key retrieved.
+       void *pData        // the data paired with the next key.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Retrieve next record from current record position.
+</pre>
+
+<a name="LdbGetNextMinRecord"/>
+<h3>LdbGetNextMinRecord()</h3>
+<pre><code>int LdbGetNextMinRecord(  // retrieves the minimum key or next key.
+       LDB_HANDLE *ph,    // pointer to the LDB_HANDLE.
+       void *pKey,        // pointer to the key retrieved.
+       void *pData,       // pointer to the data retrieved.
+       int fGetMin        // flag. see Notes bellow.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Retrieve minimum key record if fGetMin != 0,otherwise the same as LdbGetNextRecord().
+</pre> 
+
+<a name="LdbGetPrevRecord"/>
+<h3>LdbGetPrevRecord()</h3>
+<pre><code>int LdbGetPrevRecord(     // returns the previous record from the current record pointer in sorted order.
+       LDB_HANDLE *ph,    // pointer to the LDB_HANDLE.
+       void * pKey,       // pointer to the key retrieved.
+       void *pData        // pointer to the data retrieved.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Retrieve previous record from current record position.
+</pre>
+
+<a name="LdbGetPrevMaxRecord"/>
+<h3>LdbGetPrevMaxRecord()</h3>
+<pre><code>int LdbGetPrevMaxRecord(  // retrieves the maximum key or previous key.
+       LDB_HANDLE *ph,    // pointer to the LDB_HANDLE.
+       void *pKey,        // pointer to the key retrieved.
+       void *pData,       // pointer to the data retrieved.
+       int  fGetMax       // flag. see Notes bellow.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Retrieve maximum key record if fGetMax != 0,otherwise the same as LdbGetPrevRecord().
+</pre>
+
+<a name="LdbGetCurRecord"/>
+<h3>LdbGetCurRecord()</h3>
+<pre><code>int LdbGetCurRecord(     // retieves the record at the current <a href="#RECORD_POINTER">record pointer</a>.
+       LDB_HANDLE *ph,   // pointer to the LDB_HANDLE.
+       void *pKey,       // pointer to the key retrieved.
+       void *pData       // pointer to the data retrieved.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Get record at the <a href="#RECORD_POINTER">current record position</a>.
+</pre>
+
+<a name="LdbChangeCurData"/>
+<h3>LdbChangeCurData()</h3>
+<pre><code>int LdbChangeCurData(   // changes data at the <a href="#RECORD_POINTER">current record pointer</a>.
+       LDB_HANDLE *ph,  // pointer to the LDB_HANDLE.
+       void *pData      // pointer to the data to change.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Change the current data.
+</pre>
+
+<a name="LdbCompareKeys"/>
+<h3>LdbCompareKeys()</h3>
+<pre><code>int LdbCompareKeys(       // cpmpares two keys and returns the result(0 if pKey1==pKey2,1 if pKey1 &gt; pKey2,-1 if pKey1 &lt; pKey2).
+       LDB_HANDLE *ph,    // pointer to the LDB_HANDLE.
+       int        *pf,    // pointer to the return value.
+       void       *pKey1, // pointer to the first key.
+       void       *pKey2  // pointer to the second key.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Compares 2 keys and returns result to *pf.
+  For key-compare logic,see <a href="#KeyCompare">Key-compare logic</a>.
+</pre>
+
+<a name="LdbFlush"/>
+<h3>LdbFlush()</h3>
+<pre><code>int LdbFlush(         // flushes every modified block back to the LightDb file opened.
+      LDB_HANDLE *ph  // LightDB handle.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Number of blocks kept in memories is specified at <a href="#LdbOpen">LdbOpen()</a>.
+</pre>
+
+
+<a name="LdbVerifyContents"/>
+<h3>LdbVerifyContents()</h3>
+<pre><code>int LdbVerifyContents(      // checks the validity of the database(but does not repair anything bad).
+       LDB_HANDLE *ph,      // LightDB handle.
+       int         detail   // output level.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Check the validity of the LightDb file.
+    detail ... 0: No output except for Warning or Error messages.
+               1: Print header informations.
+              &gt;1: More informations. 
+</pre>
+
+
+<a name="LdbUserAreaIO"/>
+<h3>LdbUserAreaIO()</h3>
+<pre><code>int LdbUserAreaIO(        // reads or writes user information from or to the control area.
+       LDB_HANDLE *ph,    // LightDB handle.
+       void       *pData, // pointer to the user information area.
+       int         cb,    // number of bytes to read or write.
+       char        chIo   // I/O flag.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  User control area I/O function.
+    chIo ... 'W' or 'w' : write cb bytes of *pData to user area.
+             'R' or 'r' : read cb byte to *pData from user area.
+     The maximum value of cb available can be obtained by calling <a href="LdbGetInfo">LdbGetInfo()</a>.
+</pre>
+
+
+<a name="LdbGetInfo"/>
+<h3>LdbGetInfo()</h3>
+<pre><code>int LdbGetInfo(           // obtains LightDB header informations.
+       LDB_HANDLE *ph,    // LightDB handle.
+       LDB_INFO   *pInfo  // pointer to the area to receive informations.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Get database informations to the struct LDB_INFO listed bellow.
+  If pInfo is NULL,then infomations are printed to the console.
+</pre>
+
+<pre><code>
+  typedef struct _LDB_INFO {
+     U_INT64       Version;          /* Version number */
+     U_INT64       TotalPages;       /* Total pages in the data base. */
+     U_INT64       RootPage;         /* Root page's block number */
+     U_INT64       DeletedPage;      /* Top of the deleted page chain */
+     unsigned int  PageByteSize;     /* Page size in bytes */
+     unsigned int  KeyByteSize;      /* Key size in bytes */
+     unsigned int  DataByteSize;     /* Data size in bytes */
+     unsigned int  UserAreaByteSize; /* User area size in bytes */
+     unsigned int  MaxItems;         /* Max numer of items in a page. */
+     unsigned int  CachedPages;      /* Number of pages(blocks) cached */
+     LDB_TYPE      KeyType;          /* Key type. */
+     LDB_TYPE      DataType;         /* Data type. */
+  } LDB_INFO;
+</code></pre>
+
+<a name="LdbGetMsg"/>
+<h3>LdbGetMsg()</h3><br/>
+<pre><code>char *LdbGetMsg(   // returns the pointer to the string describing the error/warning code e.
+         int e     // e must be one of <a href="#ERROR_CODE">the code listed bellow</a>
+     ); 
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  Returns pointer to the string describing the meaning of return code of e,
+  where: 
+    Negative values mean fatal errors.
+    Positive values(warnings) are not always fatal.
+    Most LightDB API returns <b>value 0 on success</b>(normal case), or returns <a href="#ERROR_CODE">one of the value listed</a> bellow. The returned value is also stored in LDB_HANDLE member(LdbStatus).
+    c_error member of LDB_HANDLE struct may have more information(through strerror(c_error))
+</pre>
+
+<a name="ERROR_CODE"/>
+<h3>Error/Warning codes</h3>
+<table>
+<tr><th> error code          </th><th> value </th><th> description </th></tr>
+<tr><td>  ERROR_BAD_BLOCK_NUMBER    </td><td>   -1 </td><td> Error: bad block number specified. </td></tr>
+<tr><td>  ERROR_BAD_ITEM_NUMBER     </td><td>   -2 </td><td> Error: bad item number specified. </td></tr>
+<tr><td>  ERROR_DELETED_BLOCK       </td><td>   -3 </td><td> Error: deleted block number specified. </td></tr>
+<tr><td>  ERROR_MEMORY_ALLOC </td><td>         -10 </td><td> Error: Memory allocation error.</td></tr>
+<tr><td>  ERROR_FILE_DUPLICATED_OPEN </td><td> -20 </td><td> Error: Already opened(Close() before Open()).</td></tr>
+<tr><td>  ERROR_FILE_OPEN            </td><td> -30 </td><td> Error: Failed to open specified file.</td></tr>
+<tr><td>  ERROR_FILE_OPEN_MODE       </td><td> -40 </td><td> Error: Invalid open mode.</td></tr>
+<tr><td>  ERROR_FILE_BAD_BLOCKSIZE   </td><td> -50 </td><td> Error: Invalid block size.</td></tr>
+<tr><td>  ERROR_FILE_SEEK            </td><td> -60 </td><td> Error: File seek failed(System I/O error).</td></tr>
+<tr><td>  ERROR_FILE_READ            </td><td> -70 </td><td> Error: File read failed(System I/O error).</td></tr>
+<tr><td>  ERROR_FILE_WRITE           </td><td> -80 </td><td> Error: File write failed(System I/O error).</td></tr>
+<tr><td>  ERROR_FILE_ACCESS_DENIED   </td><td> -90 </td><td> Error: I/O error or write on read only file.</td></tr>
+<tr><td>  ERROR_CACHE_TOO_SMALL      </td><td>-100 </td><td> Error: Cache size specified too small.</td></tr>
+<tr><td>  ERROR_BUFFER_OVERRUN       </td><td>-110 </td><td> Error: Buffer overrun.</td></tr>
+<tr><td>  ERROR_KEY_SIZE             </td><td>-120 </td><td> Error: Bad key size.</td></tr>
+<tr><td>  ERROR_KEY_TYPE             </td><td>-130 </td><td> Error: Bad key type.</td></tr>
+<tr><td>  ERROR_DATA_SIZE            </td><td>-140 </td><td> Error: Bad data size.</td></tr>
+<tr><td>  ERROR_DATA_TYPE            </td><td>-150 </td><td> Error: Bad data type.</td></tr>
+<tr><td>  ERROR_ITEMS_NOT_EVEN       </td><td>-160 </td><td> Error: Number of items in a page must be even.</td></tr>
+<tr><td>  ERROR_BAD_PAGE_NO          </td><td>-170 </td><td> Error: Page number must not be zero.</td></tr>
+<tr><td>  ERROR_BAD_ARGUMENT         </td><td>-180 </td><td> Error: Bad or unacceptable argument specified.</td></tr>
+<tr><td>  ERROR_BROKEN_FILE          </td><td>-200 </td><td> Error: File is broken or non lightdb file.</td></tr>
+<tr><td>  ERROR_BAD_PTR              </td><td>-210 </td><td> Error: Bad pointer(including NULL).</td></tr>
+<tr><td>  ERROR_SYSTEM               </td><td>-220 </td><td> Error: System mulfunction.</td></tr>
+</table>
+
+<table>
+<tr><th> warning code          </th><th> value </th><th> description </th></tr>
+<tr><td>  SAME_KEY_EXISTS      </td><td> 10 </td><td> Warning: Same key alredy in the data base. </td></tr>
+<tr><td>  KEY_NOT_FOUND        </td><td> 20 </td><td> Warning: Specified key not in the data base. </td></tr>
+<tr><td>  NO_MORE_KEY          </td><td> 30 </td><td> Warning: No more keys specified in the data base. </td></tr>
+<tr><td>  NO_KEYS              </td><td> 40 </td><td> Warning: Specified keys not in the data base. </td></tr>
+<tr><td>  NO_KEY_SELECTED      </td><td> 50 </td><td> Warning: No key selected. </td></tr>
+</table>
+
+<a name="RECORD_POINTER"/>
+<h2>Record pointer</h2>
+As every record is stored in certain page at certain position in sorted order,
+any record can directly be accessed by specifying the proper position and the page number holding it.<br/>
+LightDB internally keeps both the record position and the page number called as 'record pointer' which is the location at the key-lookup ends.<br/>
+After successful key search,the record pointer is located at the position of the key searched.<br/>
+After unsuccessful key search,the record pointer is located at the position where it is inserted if addition is performed.<br/>
+The record pointer consists of both the page number(64-bit integer) and the record position(32-bit integer).<br/>
+
+Note that <b>successful record deletion makes the record pointer be undefined(the page number is zero)</b>.<br/>
+Also,care must be paid that <b>successful addition or deletion of a record affects other records' position due to keep the B-Tree balanced by restructuring</b>.
+
+<a name="LOW_LEVEL_IO"/>
+<h2>Low level I/O functions</h2>
+LightDB offers the record pointer,and low level I/O functions to access any record without searching by specifying the record pointer.<br/>
+
+<a name="LdbGetCurrentPTR"/>
+<h3>LdbGetCurrentPTR()</h3>
+<pre><code>int LdbGetCurrentPTR(        // returns current record pointer.
+       LDB_HANDLE *ph,       // pointer to the LightDB handle necessary for all I/O operations.
+       U_INT64 *piPage,      // pointer to the current page number returned.
+       int     *piRecord     // pointer to the record position returned.
+    );
+</code></pre>
+<br><b>Notes:</b>
+<pre>
+  *piPage==0 means that the current record pointer is undefined.
+   The record pointer is undefined(Page number of it is 0) after successful record deletion or just after open. 
+</pre>
+
+<a name="LdbGetRecord"/>
+<h3>LdbGetRecord()</h3>
+<pre><code>int LdbGetRecord(            // directly reads record by specifying record pointer(iPage,iRecord).
+       LDB_HANDLE *ph,       // pointer to the LightDB handle necessary for all I/O operations.
+       U_INT64     iPage,    // page number to read record.
+       int         iRecord,  // record position in the page iPage.
+       void       *pKey,     // pointer to the key field read.
+       void       *pData     // pointer to the data field read.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  The record pointer(iPage,iRecord) can be obtained by <a href="#LdbGetCurrentPTR">LdbGetCurrentPTR()</a>.
+</pre>
+
+<a name="LdbSetData"/>
+<h3>LdbSetData()</h3>
+<pre><code>int LdbSetData(              // sets/changes the data field to pData at the iRecord of the page iPage.
+       LDB_HANDLE *ph,       // LightDB handle.
+       U_INT64     iPage,    // the page number to change the data.
+       int         iRecord,  // the record position of which data is changed in the page iPage.
+       void       *pData     // pointer to the data to change.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  For further details about the record pointer,see <a href="#RECORD_POINTER">About record pointer</a>.
+</pre>
+
+<a name="LdbGetRootPage"/>
+<h3>LdbGetRootPage()</h3>
+<pre><code>int LdbGetRootPage(          // returns root page's page number.
+       LDB_HANDLE *ph,       // pointer to the LightDB handle.
+       U_INT64 *piPage       // pointer to the page number returned.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  If returned value (*piPage) is zero,then this means the database empty.
+</pre>
+
+
+<a name="LdgGetRecordCount"/>
+<h3>LdgGetRecordCount()</h3>
+<pre><code>int LdgGetRecordCount(      // returns number of records stored in the page specified by iPage.
+       LDB_HANDLE *ph,      // LightDB handle.
+       U_INT64     iPage,   // page number to obtain record count.
+       int        *pc       // pointer to the record count returned.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  The maximum number of record(=mr) is specified or decided by LightDB at LbbOpen().
+  Record count returned(=nr) must be mr/2 &lt;= nr &lt;=mr.
+</pre>
+
+<a name="LdbGetRightPage"/>
+<h3>LdbGetRightPage()</h3>
+<pre><code>int LdbGetChildPage(           // returns the right child page of the iRecord in iPage.
+       LDB_HANDLE *ph,         // LightDB handle.
+       U_INT64     iPage,      // page number having iRecord.
+       int         iRecord,    // record position having <a href="#PAGE">right child page</a>.
+       U_INT64    *pChildPage  // the right page's page number received.
+    );
+</code></pre>
+<br><b>Notes:</b><br/>
+<pre>
+  iRecord can be -1 for <a href="#PAGE">the left child page</a>.
+  *pChildPage==0 if the iPage is leaf.
+</pre>
+
+
+<a name="DB_STRUCTURE"/>
+<h2>LightDB database file structure</h2>
+LightDB file consists of equally sized blocks.<p/>
+<b>LightDB file</b>:
+<table>
+<tr><td>block[0]</td><td>block[1]</td><td>..........</td><td>block[nb-1]</td></tr>
+</table>
+LightDB file is devided into <u>equally sized blocks</u>.<br/>
+LightDB file size = (block size)*nb.<br/>
+LightDB I/O is done per each block.<br/>
+Blocks are cached in memory for performance reason.<p/>
+where:<br/>
+<ul>
+<li>nb is the total number of blocks in the LightDB file.</li>
+<li>Every block(page) is identified by 64-bit long integer called block number(0 - nb-1) 
+<li>block[0] contains database and user specified informations.</li>
+<li>block[1] - block[nb-1] are B-Tree nodes(active) or deleted block(node).</li>
+</ul>
+<ul>
+<li>B-Tree nodes(pages) consist of one root node,non leaf nodes,and leaf nodes.</li>
+<li>B-Tree has only one root node.</li>
+<li>Any key search begins fron the root page.</li>
+<li>Pages(including root page) having child pages are called non-leaf.</li>
+<li>Pages having no children are called leaf.</li>
+</ul>
+
+In this documentation,block,node and page are virtually the same.
+
+<h3>Block[0]</h3>
+<b>Block[0]</b>:
+<table><tr><td>LightDB information area</td><td>User specific area</td></tr></table>
+Block 0,the top block of the database file, is the block for database informations.
+Informations such as key type,key length,data type,data length,block number of the root page,...etc.<br/>
+User specific informations can also be saved in this block.<br/>
+<p/>
+<a name="BLOCK_HEADER">
+<b>LightDB information area:</b><pre><code>  //
+  // The first part of the block 0 is the BLOCK_HEADER followed by the PAGE_HEADER.  
+  //
+  typedef struct _BLOCK_HEADER {
+	U_INT64   ID;            // == "LightDB\0",ASCII string.
+	U_INT64   Version;       // Currently 2.
+	U_INT64   TotalBocks;    // Total number of blocks in the data base.
+	U_INT64   TopDeleted;    // Top of the deleted page link. 0 is the final block deleted.
+                                 // The highest bit of the top 8-byte of any deleted block is set to 1
+                                 //  (Page number | 0x8000000000000000LL).
+	U_INT64   BlockByteSize; // The size of a block in bytes.
+	U_INT64   DeletedBlocks; // Total number of the deleted blocks.
+  } BLOCK_HEADER;
+
+  typedef struct _PAGE_HEADER {
+	U_INT64   RootPage;      // Root page's block number.
+	U_INT64   TotalRecords;  // Total number of records in the data base.
+	S_INT32   KeyType;       // <a href="#LDB_TYPE">Key type</a>.
+	U_INT32   KeyByteSize;   // Key length in bytes.
+	S_INT32   DataType;      // <a href="#LDB_TYPE">Data type</a>.
+	U_INT32   DataByteSize;  // Data length in bytes.
+	S_INT32   MaxItems;      // Max numer of items(records) in a page.
+	U_INT32   Dummy32;       // reserved for future use(from here to the user specific area is reserved.)
+  } PAGE_HEADER;
+</code></pre>
+
+<b>User specific area:</b><br><pre>
+  User specific area ends at the end of the block 0,but the size is defined at <a href="#LdbOpen">LdbOpen()</a> stage.
+  Refer to <a href="#LdbGetInfo">LdbGetInfo()</a> for size and <a href="#LdbUserAreaIO">LdbUserAreaIO()</a> for I/O respectibly.
+</pre>
+
+<h3>Block[1] - [nb-1]</h3>
+From block[1] to block[nb-1] are B-Tree pages having multiple records(keys+data) or empty pages all of which records are deleted.<br/>
+All active pages are linked each other to construct B-Tree structure.<br/>
+All deleted(empty) pages are also linked as deleted block chain.
+
+<a name="PAGE"/>
+<h3>Page</h3>
+Every active page in the B-Tree has the pointer(=block number) to its parent.<br/>
+But the root page has no parent(=parent block number is 0). <br/>
+All records associated with their right child pointer(=<a href="#ITEM">Item</a>) in a page are stored in sorted order.<br/>
+A Record with it's right child pointer is called an <a href="#ITEM">item</a>.<br/>
+A page can have mi items at most defined at <a href="#LdbOpen">LdbOpen()</a>.<p/>
+<b>Active page:</b>
+<table>
+<tr>
+<td>Page number of this page</td>
+<td>Parent page number</td>
+<td>left child page number</td>
+<td>ni(64-bit)</td> 
+</td><td>Item[0]</td>
+</td><td>Item[1]</td>
+</td><td>......</td>
+</td><td>Item[ni-1]</td>
+</tr>
+</table>
+<ul>
+<li>mi/2 &lt;= ni &lt;= mi, where ni is the number of keys the page currently has(the root page can have items less than mi/2).</li>
+<li>mi,specified by the user or defined by LightDB, must be an even number greater than or eqaul to 8.</li>
+<li>The key of item[i] &lt; All right child's keys &lt; the key of item[i+1].</li>
+<li>All keys in the left child page &lt; the key in item[0].</li>
+<li>Any page can have ni+1(left child + ni right children) children.
+<li>All child page numbers in any leaf page are zero.</li>
+</ul>
+
+<b>Deleted(empty) page:</b>
+<table>
+<tr>
+<td>Block number to the next deleted page</td>
+<td>undefined ......</td>
+</tr>
+</table>
+<ul>
+<li>Deleted block is reused before extending the file size when new record is added.</li>
+<li>The highest bit of the deleted block number is set to 1 (Page number | 0x8000000000000000LL).</li>
+<li>The value of the next deleted page at the final block chain is zero. </li> 
+<li>The top block of the deleted block chain is in <a href="#BLOCK_HEADER">BLOCK_HEADER</a>.
+</ul>
+
+<a name="ITEM"/>
+<b>Item[i]:</b>
+<table><tr><td><u>right child page</u> number</td><td>record(<u>key[i]</u>+data)</td></tr></table>
+<ul>
+<li><u>key[i]</u> &lt; <u>right child page</u>'s keys &lt; <u>key[i+1]</u>
+ : where key[i] is the key in the item[i].</li>
+</ul>
+<p/>
+<hr/>
+<div align="right">
+Shigeo Kobayashi 2018-10-25
+</div>
+<hr/>
+</body>
+</html>
