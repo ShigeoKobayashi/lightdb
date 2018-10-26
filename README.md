@@ -1,7 +1,7 @@
 # lightdb
-B-Tree based simple and fast C/C++ API library
+B-Tree based simple and fast C/C++ database API library
 
-The LightDB is a simple and farst database C/C++ API library based on the B-Tree(not B+Tree) indexing.
+The LightDB is a simple and fast C/C++ database API library based on the B-Tree(not B+Tree) indexing.
 The B-Tree is a self-balancing search tree having multiple nodes that contain multiple records.
 All records in B-Tree are stored in sorted order. 
 
