@@ -250,7 +250,7 @@ LDB_EXPORT(int)
 }
 
 
-LDB_EXPORT(char *)
+LDB_EXPORT(const char *)
 	LdbGetMsg(int e)
 {
 	switch(e)

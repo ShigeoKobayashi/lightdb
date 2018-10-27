@@ -82,7 +82,7 @@ public:
 		m_errno  = 0;
 	};
 	
-	void T_(int f,char *psz,...);
+	void T_(int f,const char *psz,...);
 	void *BseMemAlloc(size_t cb);
 	void *BseMemReAlloc(void *p,size_t n);
 	void  BseMemFree(void **p);
@@ -110,7 +110,7 @@ private:
 class CException 
 {
 public:
-	CException(int e,int esys,char *szFile,int l)
+	CException(int e,int esys,const char *szFile,int l)
 	{
 		m_erCode = e;
 		m_errno  = esys;

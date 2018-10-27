@@ -42,8 +42,8 @@ void CPageIo::PIoScanDb(int f)
 
 	int ik = PageHeader.KeyType;
 	int id = PageHeader.DataType;
-	char *sik = "?";
-	char *sid = "?";
+	const char *sik = "?";
+	const char *sid = "?";
 	if(ik>0&&ik<=sizeof(gstType)/sizeof(gstType[0])) sik = (char*)gstType[ik-1]; 
 	if(id>0&&id<=sizeof(gstType)/sizeof(gstType[0])) sid = (char*)gstType[id-1];
 

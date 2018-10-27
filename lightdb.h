@@ -284,7 +284,7 @@ LDB_EXPORT(int)    LdbChangeCurData(LDB_HANDLE *ph,void *pData);
 */
 LDB_EXPORT(int) LdbUserAreaIO(LDB_HANDLE *ph,void *pData,int cb,char chIo);
 
-LDB_EXPORT(char *)    LdbGetMsg(int e); /* e must be the code listed bellow */
+LDB_EXPORT(const char *)    LdbGetMsg(int e); /* e must be the code listed bellow */
 /* ERROR CODES: 
    Negative values mean fatal errors.
    Positive values are not always fatal.

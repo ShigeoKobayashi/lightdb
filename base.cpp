@@ -24,7 +24,7 @@ static int mem_counter = 0;
 // if f==TRUE then nothing is done,or print arguments after f in printf format.
 //
 void
-CBase::T_(int f,char *psz,...)
+CBase::T_(int f,const char *psz,...)
 {
 	va_list arg;
 
