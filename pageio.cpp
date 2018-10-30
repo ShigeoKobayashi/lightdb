@@ -474,7 +474,8 @@ void CPageIo::DividePage(U_INT64 iOldPage,S_INT32 L)
 		if(L>0) {
 			// rotate !
 			memcpy(m_BubbleupItem.WorkItem(),NewPage.GetItemPTR(0),GetItemSize());
-			memcpy(NewPage.GetItemPTR(0),NewPage.GetItemPTR(1),GetItemSize()*L);
+			// 2018:10:30 memcpy -> memmove ,64-bit g++ not accept memcpy.
+			memmove(NewPage.GetItemPTR(0),NewPage.GetItemPTR(1),GetItemSize()*(U_INT32)L);
 			memcpy(NewPage.GetItemPTR(L),m_BubbleupItem.WorkItem(),GetItemSize());
 			if(!m_BubbleupItem.Inserted) {
 				m_BubbleupItem.Inserted = TRUE;

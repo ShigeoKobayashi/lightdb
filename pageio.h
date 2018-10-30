@@ -207,7 +207,9 @@ public:
 	int     PIoSetData(U_INT64 iBlock,int iItem,void *pData);
 	int		PIoKeyCompare(int *pf,void *pKey1,void *pKey2)
 	{
-		return (*m_pKeyFunc)(pKey1,pKey2,m_cKeyComp,pLdbHandle);
+		// 2018:10:30 bug fixed.
+		*pf = (*m_pKeyFunc)(pKey1,pKey2,m_cKeyComp,pLdbHandle);
+		return 0;
 	};
 
 private:
@@ -416,7 +418,8 @@ public:
 		U_INT32   cb = m_pPageIo->GetItemSize();
 		ASSERT(ixS>=0 && ixE>=0);
 		while(ixE>ixS) {
-			memcpy(GetItemPTR(ixE),GetItemPTR(ixE-1),cb);
+			// 2018:10:30 memcpy -> memmove
+			memmove(GetItemPTR(ixE),GetItemPTR(ixE-1),cb);
 			ixE--;
 		}
 	}
@@ -428,7 +431,8 @@ public:
 		ASSERT(ixS>=0 && ixS<MX);
 		S_INT32   ixE = GetItemsUsed() - 1;
 		U_INT32   cb = m_pPageIo->GetItemSize()*(ixE-ixS);
-		if(cb>0) memcpy(GetItemPTR(ixS),GetItemPTR(ixS+1),cb);
+		// 2018:10:30 memcpy -> memmove
+		if(cb>0) memmove(GetItemPTR(ixS),GetItemPTR(ixS+1),cb);
 		return ixE;
 	}
 
