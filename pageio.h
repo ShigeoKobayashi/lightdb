@@ -1,8 +1,8 @@
 //
 //****************************************************************************
 //*                                                                          *
-//* Å@Copyright (C) Shigeo Kobayashi, 2016.									 *
-//*                 All rights reserved.									 *
+//*  Copyright (C) Shigeo Kobayashi, 2016.				     *
+//*                 All rights reserved.				     *
 //*                                                                          *
 //****************************************************************************
 //
@@ -22,7 +22,7 @@ typedef ITEM *P_ITEM;
 
 /*
 //
-//Å@Page data cached
+//¬Å@Page data cached
 typedef struct _PAGE {
 	U_INT64       iPage;         // Page # (==Block #)
 	U_INT64       iParentPage;   // Parent page # 
