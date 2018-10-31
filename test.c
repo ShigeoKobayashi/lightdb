@@ -1,35 +1,55 @@
-// #include "stdafx.h" if you use pre-compiled header,uncomment this line.
+/* #include "stdafx.h" if you use pre-compiled header,uncomment this line. */
+
+/*
+   LightDB simple test program.
+*/
+
 #include "lightdb.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 LDB_HANDLE  h;
 
-#define     Count    1000
+/*
+   Change Count,(KEY,KeyType),KeyArraySize,(DATA,DataType) and DataArraySize according to your environment. 
+*/
+#define     Count         1000
 
-#define     KeyType  T_SINT32
-#define     KEY      S_INT32
-#define     KeySize  2
-KEY         Key [KeySize];
+#define     KeyType       T_SINT32
+#define     KEY           S_INT32
+#define     KeyArraySize  2
+KEY         Key [KeyArraySize];
+KEY         Key2[KeyArraySize];
 
-#define     DataType T_UINT64
-#define     DATA     U_INT64
-#define     DataSize 4
-DATA        Data[DataSize];
+#define     DataType      T_UINT64
+#define     DATA          U_INT64
+#define     DataArraySize 4
+DATA        Data[DataArraySize];
+
+
+KEY_COMP_FUNCTION *pKeyFunction = NULL;
+
+#define ABS(a) ((a>=0)?(a):-(a))
 
 #define Assert(f) AssertProc(f,__FILE__,__LINE__)
-
 void AssertProc(int f,char *file,int line)
 {
 	if(f) return;
 	printf("ERROR: Assertion failed: in file %s,at line %d\n",file,line);
+	getchar();
 }
 
-
-int MyKeyComp(int *k1,int *k2,int cb,LDB_HANDLE *ph)
+/*
+   Example of user specific key-compare function.
+   If you want to use following Key-compare function,
+   just set 
+      pKeyFunction = MyKeyComp;
+	at the beggining of the main().
+*/
+int MyKeyComp(void *k1,void *k2,int cb,LDB_HANDLE *ph)
 {
 	int i;
-	for(i=0;i<KeySize;++i)
+	for(i=0;i<KeyArraySize;++i)
 	{
 		if( ((KEY*)k1)[i]>((KEY*)k2)[i] ) return  1;
 		if( ((KEY*)k1)[i]<((KEY*)k2)[i] ) return -1;
@@ -37,167 +57,165 @@ int MyKeyComp(int *k1,int *k2,int cb,LDB_HANDLE *ph)
 	return 0;
 }
 
-void make()
+/*
+  Create database,the same file is truncated if there.
+*/
+void create_test()
 {
-	int i,j;
-	printf("Write data\n");
-	Assert(0==LdbOpen(&h,"test.dbf",'T',KeyType,KeySize,NULL,DataType,DataSize,0,0));
+	int      i,j,f;
+	int      keysize = KeyArraySize;
+	LDB_TYPE keytype = KeyType;
 
+	printf("Create database\n"); fflush(stdout);
+	if(pKeyFunction!=NULL) {
+		keysize = KeyArraySize*sizeof(KEY);
+		keytype = T_UNDEFINED;
+	}
+
+	Assert(0==LdbOpen(&h,"test.dbf",'T',keytype,keysize,pKeyFunction,DataType,DataArraySize,0,0));
+
+	f = 1;
 	for(i=1;i<=Count;++i) {
-		Key[0]  = i;
-		Data[0] = i;
-		printf(" %d\r",i);
+		f *= -1;
+		Key [0] = (KEY)(i*f);
+		printf(" %d\r",i); fflush(stdout);
 		for(j=1;j<=Count;++j) {
-			Key[1]  = j;
-			Data[1] = j;
+			f *= -1;
+			Key [1] = (KEY)(j*f);
+			Data[0] = (DATA)j;
+			Data[1] = (DATA)i;
 			Assert(0==LdbAddRecord(&h,Key,Data));
 			Assert(0==LdbGetData(&h,Key,Data));
-			Assert(Key[0]==i && Data[0]==i && Key[1]==j && Data[1]==j);
+			Assert(Data[0]==j && Data[1] == i);
+			Data[0] = (DATA)i;
+			Data[1] = (DATA)j;
+			Assert(0==LdbChangeData(&h,Key,Data));
 		}
 	}
 	LdbVerifyContents(&h,1);
-	LdbClose(&h);
-}
-
-void seq_test()
-{
-	int i,j;
-	int f=1;
-	printf("Sequential test\n");
-	Assert(0==LdbOpen(&h,"test.dbf",'R',KeyType,KeySize,NULL,DataType,DataSize,0,0));
-	for(i=1;i<=Count;++i) {
-		for(j=1;j<=Count;++j) {
-			Assert(0==LdbGetNextMinRecord(&h,Key,Data,f)); f=0;
-			Assert(Key[0]==i && Data[0]==i && Key[1]==j && Data[1]==j);
-		}
-	}
-	LdbClose(&h);
-}
-
-void rev_test()
-{
-	int i,j;
-	int f=1;
-	printf("Reverse sequential test\n");
-	Assert(0==LdbOpen(&h,"test.dbf",'R',KeyType,KeySize,NULL,DataType,DataSize,0,0));
-
-	for(i=Count;i>=1;--i) {
-		printf(" %d\r",i);
-		for(j=Count;j>=1;--j) {
-			Assert(0==LdbGetPrevMaxRecord(&h,Key,Data,f)); f=0;
-			Assert(Key[0]==i && Data[0]==i && Key[1]==j && Data[1]==j);
-		}
-	}
 	LdbClose(&h);
 }
 
 void read_test()
 {
-	int i,j;
-	printf("Read test\n");
-	Assert(0==LdbOpen(&h,"test.dbf",'R',KeyType,KeySize,NULL,DataType,DataSize,0,0));
+	int      i,j,f;
+	int      keysize = KeyArraySize;
+	LDB_TYPE keytype = KeyType;
 
-	for(i=1;i<=Count;++i) {
-		printf(" %d\r",i);
-		Key[0]=i;
-		for(j=1;j<=Count;++j) {
-			Key[1]=j;
-			Assert(0==LdbGetData(&h,Key,Data));
-			Assert(Key[0]==i && Data[0]==i && Key[1]==j && Data[1]==j);
-		}
+	printf("Read database\n");fflush(stdout);
+
+	if(pKeyFunction!=NULL) {
+		keysize = KeyArraySize*sizeof(KEY);
+		keytype = T_UNDEFINED;
 	}
-	LdbClose(&h);
-}
 
-void seq_test2()
-{
-	int i,j;
-	int f=1;
-	printf("Sequential test\n");
+	Assert(0==LdbOpen(&h,"test.dbf",'R',keytype,keysize,pKeyFunction,DataType,DataArraySize,0,0));
 
-	Assert(0==LdbOpen(&h,"test.dbf",'W',KeyType,KeySize,NULL,DataType,DataSize,0,0));
-	for(i=1;i<=Count;++i) {
-		printf(" %d\r",i);
-		for(j=1;j<=Count;++j) {
-			Assert(0==LdbGetNextMinRecord(&h,Key,Data,f)); f=0;
-			Assert(Key[0]==i && Data[0]==i && Key[1]==j && Data[1]==j);
-			Data[0] += 1;			
-			Data[1] += 1;			
-			Assert(0==LdbChangeCurData(&h,Data));
-		}
-	}
-	LdbClose(&h);
-
-	printf(" Reset data \n");fflush(stdout);
-	Assert(0==LdbOpen(&h,"test.dbf",'W',KeyType,KeySize,NULL,DataType,DataSize,0,0));
 	f = 1;
 	for(i=1;i<=Count;++i) {
-		printf(" %d\r",i);
+		f *= -1;
+		printf(" %d\r",i);fflush(stdout);
+		Key[0]=(KEY)(i*f);
 		for(j=1;j<=Count;++j) {
-			Assert(0==LdbGetNextMinRecord(&h,Key,Data,f)); f=0;
-			Assert(Key[0]==i && Data[0]==i+1 && Key[1]==j && Data[1]==j+1);
-			Data[0] = i;			
-			Data[1] = j;			
-			Assert(0==LdbChangeCurData(&h,Data));
+			f *= -1;
+			Key[1]=(KEY)(j*f);
+			Assert(0==LdbGetData(&h,Key,Data));
+			Assert(Data[0]==i && Data[1]==j);
 		}
 	}
 	LdbClose(&h);
 }
+
+void seq_test()
+{
+	int      i,j,k,f=1;
+	int      keysize = KeyArraySize;
+	LDB_TYPE keytype = KeyType;
+
+	printf("Forward sequential test\n");fflush(stdout);
+
+	if(pKeyFunction!=NULL) {
+		keysize = KeyArraySize*sizeof(KEY);
+		keytype = T_UNDEFINED;
+	}
+
+	Assert(0==LdbOpen(&h,"test.dbf",'R',keytype,keysize,pKeyFunction,DataType,DataArraySize,0,0));
+
+	f = 1;
+	for(i=1;i<=Count;++i) {
+		printf(" %d\r",i);fflush(stdout);
+		for(j=1;j<=Count;++j) {
+			Assert(0==LdbGetNextMinRecord(&h,Key,Data,f));
+			if(!f) {
+				Assert(0==LdbCompareKeys(&h,&f,Key,Key2));
+				Assert(f>0);
+			}
+			f=0;
+			for(k=0;k<KeyArraySize;++k) Key2[k] = Key[k];
+			Assert(Data[0]==ABS(Key[0]) && Data[1]==ABS(Key[1]));
+		}
+	}
+
+	f = 1;
+	printf("Backward sequential test\n");fflush(stdout);
+	for(i=1;i<=Count;++i) {
+		printf(" %d\r",i);fflush(stdout);
+		for(j=1;j<=Count;++j) {
+			Assert(0==LdbGetPrevMaxRecord(&h,Key,Data,f));
+			if(!f) {
+				Assert(0==LdbCompareKeys(&h,&f,Key,Key2));
+				Assert(f<0);
+			}
+			f=0;
+			for(k=0;k<KeyArraySize;++k) Key2[k] = Key[k];
+			Assert(Data[0]==ABS(Key[0]) && Data[1]==ABS(Key[1]));
+		}
+	}
+	LdbClose(&h);
+}
+
 
 void delete_test()
 {
-	int i,j,k;
-	printf("Create test\n");
-	Assert(0==LdbOpen(&h,"test.dbf",'T',
-				T_UNDEFINED,sizeof(KEY)*KeySize,(KEY_COMP_FUNCTION*)MyKeyComp,
-				DataType,DataSize,
-				0,0) /* Number of items and caches are decided by LightDB  */
-		  );
+	int      i,j,f;
+	int      keysize = KeyArraySize;
+	LDB_TYPE keytype = KeyType;
 
+	printf("Delete test\n");fflush(stdout);
+
+	if(pKeyFunction!=NULL) {
+		keysize = KeyArraySize*sizeof(KEY);
+		keytype = T_UNDEFINED;
+	}
+
+	Assert(0==LdbOpen(&h,"test.dbf",'W',keytype,keysize,pKeyFunction,DataType,DataArraySize,0,0));
+
+	f = 1;
 	for(i=1;i<=Count;++i) {
-		for(k=0;k<KeySize;++k)  Key [k]  = i+k;
-		for(k=0;k<DataSize;++k) Data[k]  = i+k;
-		printf(" %d\r",i);fflush(stdout);
+		f *= -1;
+		Key [0] = (KEY)(i*f);
+		printf(" %d\r",i); fflush(stdout);
 		for(j=1;j<=Count;++j) {
-			Key[0] += j;
-			Assert(0==LdbAddRecord(&h,Key,Data));
+			f *= -1;
+			Key [1] = (KEY)(j*f);
+			Assert(0==LdbDeleteRecord(&h,Key));
+			Assert(0!=LdbGetData(&h,Key,Data));
 		}
 	}
 	LdbVerifyContents(&h,1);
-	LdbClose(&h);
 
-	printf("Read test\n");
-	/* Some argument can be ignored for opening old file */
-	Assert(0==LdbOpen(&h,"test.dbf",'R',
-				T_UNDEFINED,sizeof(KEY)*KeySize,(KEY_COMP_FUNCTION*)MyKeyComp,
-				DataType,DataSize,
-				0,0) /* Number of items and caches are decided by LightDB  */
-		  );
+	printf("Recreate the database\n");fflush(stdout);
+	f = 1;
 	for(i=1;i<=Count;++i) {
-		for(k=0;k<KeySize;++k)  Key [k]  = i+k;
-		printf(" %d\r",i);fflush(stdout);
+		f *= -1;
+		Key [0] = (KEY)(i*f);
+		Data[0] = (DATA)i;
+		printf(" %d\r",i); fflush(stdout);
 		for(j=1;j<=Count;++j) {
-			Key[0] += j;
-			Assert(0==LdbGetData(&h,Key,Data));
-			for(k=0;k<DataSize;++k) Assert(Data[k]==i+k);
-		}
-	}
-	LdbClose(&h);
-
-	printf("Delete test\n");
-	Assert(0==LdbOpen(&h,"test.dbf",'W',
-				T_UNDEFINED,sizeof(KEY)*KeySize,(KEY_COMP_FUNCTION*)MyKeyComp,
-				DataType,DataSize,
-				0,0) /* Number of items and caches are decided by LightDB  */
-		  );
-	for(i=1;i<=Count;++i) {
-		for(k=0;k<KeySize;++k)  Key [k]  = i+k;
-		printf(" %d\r",i);fflush(stdout);
-		for(j=1;j<=Count;++j) {
-			Key[0] += j;
-			Assert(0==LdbGetData(&h,Key,Data));
-			Assert(0==LdbDeleteRecord(&h,Key));
-			Assert(0!=LdbGetData(&h,Key,Data));
+			f *= -1;
+			Key [1] = (KEY)(j*f);
+			Data[1] = (DATA)j;
+			Assert(0==LdbAddRecord(&h,Key,Data));
 		}
 	}
 	LdbVerifyContents(&h,1);
@@ -206,11 +224,9 @@ void delete_test()
 
 int main(int argc,char* argv[])
 {
-	make();
+	create_test();
 	read_test();
 	seq_test();
-	rev_test();
-	seq_test2();
 	delete_test();
 	return 0;
 }
