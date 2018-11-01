@@ -1,5 +1,5 @@
 # lightdb
-[B-Tree based simple and fast C/C++ database API library](http://www.tinyforest.jp/)
+[B-Tree based simple and fast C/C++ database API library](http://www.tinyforest.jp/oss/lightdb.html)
 
 
 The LightDB is a simple and fast C/C++ database API library based on the B-Tree(not B+Tree) indexing.
