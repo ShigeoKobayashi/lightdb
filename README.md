@@ -19,3 +19,5 @@ To build this software on Linux => see makefile
 To build this software on Windows => create Visual studio solution,and add source files.
 
 To use this library => include lightdb.h in your source codes(see test.c) and link appropriate library files.
+
+Windows binary files(32-bit:Test.exe,lightdb.dll,lightdb.lib) can be [downloaded from here](http://www.tinyforest.jp/oss/lightdb.zip).
