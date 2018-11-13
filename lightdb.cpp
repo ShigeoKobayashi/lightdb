@@ -222,7 +222,7 @@ LDB_EXPORT(int)
 }
 
 LDB_EXPORT(int)
-	LdgGetRecordCount(LDB_HANDLE *ph,U_INT64 iBlock,int *pc)
+	LdbGetRecordCount(LDB_HANDLE *ph,U_INT64 iBlock,int *pc)
 {
 	ENTER({*pc=pIo->PIoGetItemNumber(iBlock);})
 	LEAVE({ })

@@ -338,7 +338,7 @@ LDB_EXPORT(int) LdbGetRootPage(LDB_HANDLE *ph,U_INT64 *piPage);
 */
 LDB_EXPORT(int) LdbGetCurrentPTR(LDB_HANDLE *ph,U_INT64 *piPage,int *piRecord);
 LDB_EXPORT(int) LdbGetRecord(LDB_HANDLE *ph,U_INT64 iPage,int iRecord,void *pKey,void *pData);
-LDB_EXPORT(int) LdgGetRecordCount(LDB_HANDLE *ph,U_INT64 iPage,int *pc);
+LDB_EXPORT(int) LdbGetRecordCount(LDB_HANDLE *ph,U_INT64 iPage,int *pc);
 LDB_EXPORT(int) LdbGetChildPage(LDB_HANDLE *ph,U_INT64 iPage,int iRecord,U_INT64 *pChildPage);
 LDB_EXPORT(int) LdbSetData(LDB_HANDLE *ph,U_INT64 iPage,int iRecord,void *pData);
 
