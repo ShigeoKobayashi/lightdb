@@ -224,6 +224,10 @@ void delete_test()
 
 int main(int argc,char* argv[])
 {
+	/*
+	pKeyFunction = MyKeyComp;
+	*/
+
 	create_test();
 	read_test();
 	seq_test();
