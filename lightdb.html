@@ -97,7 +97,7 @@ It is sometimes good idea to store the data iteself to other place if it is subs
  <a href="#LdbGetRootPage">LdbGetRootPage()</a><br/>
  <a href="#LdbGetCurrentPTR">LdbGetCurrentPTR()</a><br/>
  <a href="#LdbGetRecord">LdbGetRecord()</a><br/>
- <a href="#LdgGetRecordCount">LdgGetRecordCount()</a><br/>
+ <a href="#LdbGetRecordCount">LdbGetRecordCount()</a><br/>
  <a href="#LdbGetRightPage">LdbGetRightPage()</a><br/>
  <a href="#LdbSetData">LdbSetData()</a>
 </td><td>
@@ -668,9 +668,9 @@ LightDB offers the record pointer,and low level I/O functions to access any reco
 </pre>
 
 
-<a name="LdgGetRecordCount"/>
-<h3>LdgGetRecordCount()</h3>
-<pre><code>int LdgGetRecordCount(      // returns number of records stored in the page specified by iPage.
+<a name="LdbGetRecordCount"/>
+<h3>LdbGetRecordCount()</h3>
+<pre><code>int LdbGetRecordCount(      // returns number of records stored in the page specified by iPage.
        LDB_HANDLE *ph,      // LightDB handle.
        U_INT64     iPage,   // page number to obtain record count.
        int        *pc       // pointer to the record count returned.
