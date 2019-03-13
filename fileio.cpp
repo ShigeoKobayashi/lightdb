@@ -19,7 +19,7 @@
 #define READ(buf,cb,f)    fread(buf,1,cb,f)
 #define WRITE(buf,cb,f)   fwrite(buf,1,cb,f)
 #define SEEK(f,cb,pos)    _fseeki64(f,cb,pos)
-#define TELL(f)           _ftelli64(m_hFile);
+#define TELL(f)           _ftelli64(f);
 #define FLUSH(f)          fflush(f)
 #endif
 
@@ -31,7 +31,7 @@
 #define READ(buf,cb,f)    fread(buf,1,cb,f)
 #define WRITE(buf,cb,f)   fwrite(buf,1,cb,f)
 #define SEEK(f,cb,pos)    fseeko64(f,cb,pos)
-#define TELL(f)           ftello64(m_hFile);
+#define TELL(f)           ftello64(f);
 #define FLUSH(f)          fflush(f)
 #endif
 
